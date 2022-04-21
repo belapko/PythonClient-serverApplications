@@ -1,25 +1,32 @@
 {
     "orders": [
         {
-            "item": "\u041a\u0440\u043e\u0441\u0441\u043e\u0432\u043a\u0438",
+            "item": "computer",
             "quantity": 3,
             "price": 6900,
             "buyer": "Stepan",
             "date": "04/12/2021"
         },
         {
-            "item": "\u041a\u0440\u043e\u0441\u0441\u043e\u0432\u043a\u0438",
+            "item": "monitor",
+            "quantity": 2,
+            "price": 12390,
+            "buyer": "Степан",
+            "date": "31/12/2021"
+        },
+        {
+            "item": "computer",
             "quantity": 3,
             "price": 6900,
             "buyer": "Stepan",
             "date": "04/12/2021"
         },
         {
-            "item": "\u041a\u0440\u043e\u0441\u0441\u043e\u0432\u043a\u0438",
-            "quantity": 3,
-            "price": 6900,
-            "buyer": "Stepan",
-            "date": "04/12/2021"
+            "item": "monitor",
+            "quantity": 2,
+            "price": 12390,
+            "buyer": "Степан",
+            "date": "31/12/2021"
         }
     ]
 }
