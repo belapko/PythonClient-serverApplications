@@ -5,9 +5,11 @@ from common.variables import USER, ACTION, ACCOUNT_NAME, RESPONSE, MAX_CONNECTIO
 from common.utils import get_message, send_message
 import logging
 from logs import config_server_log
+from log_decorator import log
 
 SERVER_LOGGER = logging.getLogger('server')
 
+@log
 def process_client_message(message):
     # Принимает словарь - сообщение от клиента, проверяет корректность, возвращает словарь - ответ
     SERVER_LOGGER.debug(f'Сообщение от клиента: {message}')
