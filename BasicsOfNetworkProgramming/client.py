@@ -7,9 +7,11 @@ from common.variables import ACTION, PRESENCE, TIME, USER, ACCOUNT_NAME, RESPONS
 from common.utils import get_message, send_message
 import logging
 from logs import config_client_log
+from log_decorator import log
 
 CLIENT_LOGGER = logging.getLogger('client')
 
+@log
 def create_presence(account_name='Guest'):  # Генерация запроса о присутствии клиента
     out = {
         ACTION: PRESENCE,
@@ -21,7 +23,7 @@ def create_presence(account_name='Guest'):  # Генерация запроса 
     CLIENT_LOGGER.debug(f'Сформировано {PRESENCE} сообщение для пользователя {ACCOUNT_NAME}')
     return out
 
-
+@log
 def process_ans(message):  # Разбор ответа от сервера
     CLIENT_LOGGER.debug(f'Разбор сообщения от сервера: {message}')
     if RESPONSE in message:
