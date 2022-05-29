@@ -8,15 +8,15 @@ client_formatter = logging.Formatter('%(asctime)s %(levelname)s %(filename)s %(m
 path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(path, 'client.log')
 
-logstream = logging.StreamHandler()
-logstream.setFormatter(client_formatter)
-logstream.setLevel(logging.DEBUG)
+# logstream = logging.StreamHandler()
+# logstream.setFormatter(client_formatter)
+# logstream.setLevel(logging.DEBUG)
 
 logfile = logging.FileHandler(path, encoding='utf-8')
 logfile.setFormatter(client_formatter)
 
 logger = logging.getLogger('client')
-logger.addHandler(logstream)
+# logger.addHandler(logstream)
 logger.addHandler(logfile)
 logger.setLevel(LOGGING_LEVEL)
 
