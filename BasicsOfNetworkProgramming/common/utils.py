@@ -1,4 +1,6 @@
 import json
+
+from errors import IncorrectDataRecivedError
 from .variables import MAX_PACKAGE_LENGTH, ENCODING
 from log_decorator import log
 
@@ -8,13 +10,13 @@ def get_message(client):
     encoded_response = client.recv(MAX_PACKAGE_LENGTH)
     if isinstance(encoded_response, bytes):
         json_response = encoded_response.decode(ENCODING)
-        if isinstance(json_response, str):
-            response = json.loads(json_response)
-            if isinstance(response, dict):
-                return response
-            raise ValueError
-        raise ValueError
-    raise ValueError
+        response = json.loads(json_response)
+        if isinstance(response, dict):
+            return response
+        else:
+            raise IncorrectDataRecivedError
+    else:
+        raise IncorrectDataRecivedError
 
 
 @log
