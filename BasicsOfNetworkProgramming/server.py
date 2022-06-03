@@ -6,7 +6,7 @@ import socket
 import time
 
 from common.variables import USER, ACTION, ACCOUNT_NAME, RESPONSE, MAX_CONNECTIONS, PRESENCE, TIME, ERROR, DEFAULT_PORT, \
-    MESSAGE, MESSAGE_TEXT, SENDER
+    MESSAGE, MESSAGE_TEXT, SENDER, DESTINATION, RESPONSE_200, RESPONSE_400, EXIT
 from common.utils import get_message, send_message
 import logging
 from logs import config_server_log
@@ -16,26 +16,55 @@ SERVER_LOGGER = logging.getLogger('server')
 
 
 @log
-def process_client_message(message, messages_list, client):
+def process_client_message(message, messages_list, client, clients, names):
     # Принимает словарь - сообщение от клиента, проверяет корректность, возвращает словарь - ответ
     SERVER_LOGGER.debug(f'Сообщение от клиента: {message}')
-    if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
-            and USER in message and message[USER][ACCOUNT_NAME] == 'Guest':
-        send_message(client, {RESPONSE: 200})
+    if ACTION in message and message[ACTION] == PRESENCE and \
+            TIME in message and USER in message:
+        # Если такой пользователь ещё не зарегистрирован,
+        # регистрируем, иначе отправляем ответ и завершаем соединение.
+        if message[USER][ACCOUNT_NAME] not in names.keys():
+            names[message[USER][ACCOUNT_NAME]] = client
+            send_message(client, RESPONSE_200)
+        else:
+            response = RESPONSE_400
+            response[ERROR] = 'Имя пользователя уже занято.'
+            send_message(client, response)
+            clients.remove(client)
+            client.close()
         return
-        # Если это сообщение, то добавляем его в очередь сообщений. Ответ не требуется.
+        # Если это сообщение, то добавляем его в очередь сообщений.
+        # Ответ не требуется.
     elif ACTION in message and message[ACTION] == MESSAGE and \
-            TIME in message and MESSAGE_TEXT in message:
-        messages_list.append((message[ACCOUNT_NAME], message[MESSAGE_TEXT]))
+            DESTINATION in message and TIME in message \
+            and SENDER in message and MESSAGE_TEXT in message:
+        messages_list.append(message)
+        return
+        # Если клиент выходит
+    elif ACTION in message and message[ACTION] == EXIT and ACCOUNT_NAME in message:
+        clients.remove(names[message[ACCOUNT_NAME]])
+        names[message[ACCOUNT_NAME]].close()
+        del names[message[ACCOUNT_NAME]]
         return
         # Иначе отдаём Bad request
     else:
-        send_message(client, {
-            RESPONSE: 400,
-            ERROR: 'Bad Request'
-        })
+        response = RESPONSE_400
+        response[ERROR] = 'Запрос некорректен.'
+        send_message(client, response)
         return
 
+@log
+def process_message(message, names, listen_socks):
+    if message[DESTINATION] in names and names[message[DESTINATION]] in listen_socks:
+        send_message(names[message[DESTINATION]], message)
+        SERVER_LOGGER.info(f'Отправлено сообщение пользователю {message[DESTINATION]} '
+                           f'от пользователя {message[SENDER]}.')
+    elif message[DESTINATION] in names and names[message[DESTINATION]] not in listen_socks:
+        raise ConnectionError
+    else:
+        SERVER_LOGGER.error(
+            f'Пользователь {message[DESTINATION]} не зарегистрирован на сервере, '
+            f'отправка сообщения невозможна.')
 
 @log
 def arg_parser():
@@ -55,7 +84,6 @@ def arg_parser():
         sys.exit(1)
 
     return listen_address, listen_port
-
 
 def main():
     # Загрузка параметров командной строки. Нет параметров - задаем значения по умолчанию.
@@ -96,6 +124,7 @@ def main():
 
     clients_list = []
     messages_queue = []
+    names = dict()  # {client_name: client_socket}
 
     transport.listen(MAX_CONNECTIONS)  # Максимальное кол-во подключений в очереди
     while True:
@@ -119,43 +148,22 @@ def main():
         if data_to_receive:
             for client_with_message in data_to_receive:
                 try:
-                    process_client_message(get_message(client_with_message), messages_queue, client_with_message)
+                    process_client_message(get_message(client_with_message), messages_queue, client_with_message, clients_list, names)
                 except:
                     SERVER_LOGGER.info(
                         f'клиент {client_with_message.getpeername()} был отключён')
                     # getpeername Return the remote address to which the socket is connected.
                     clients_list.remove(client_with_message)
 
-        if messages_queue and data_to_send:
-            message = {
-                ACTION: MESSAGE,
-                SENDER: messages_queue[0][0],
-                TIME: time.time(),
-                MESSAGE_TEXT: messages_queue[0][1]
-            }
-            del messages_queue[0]
-            for waiting_client in data_to_send:
-                try:
-                    send_message(waiting_client, message)
-                except:
-                    SERVER_LOGGER.info(f'клиент {waiting_client.getpeername()} был отключён')
-                    waiting_client.close()
-                    clients_list.remove(waiting_client)
 
-        #
-        # try:
-        #     message_from_client = get_message(client)
-        #     SERVER_LOGGER.debug(f'Получено сообщение: {message_from_client}')
-        #     print(message_from_client)
-        #     response = process_client_message(message_from_client)
-        #     SERVER_LOGGER.debug(f'Сформирован ответ клиенту: {response}')
-        #     send_message(client, response)
-        #     SERVER_LOGGER.debug(f'Соединение с {client_address} закрывается')
-        #     client.close()
-        # except (ValueError, json.JSONDecodeError):
-        #     SERVER_LOGGER.error(f'Некорректное сообщение от клиента {client_address}')
-        #     print('Некорректное сообщение от клиента')
-        #     client.close()
+        for i in messages_queue:
+            try:
+                process_message(i, names, data_to_send)
+            except Exception:
+                SERVER_LOGGER.info(f'Связь с {i[DESTINATION]} была потеряна')
+                clients_list.remove(names[i[DESTINATION]])
+                del names[i[DESTINATION]]
+        messages_queue.clear()
 
 
 if __name__ == '__main__':
