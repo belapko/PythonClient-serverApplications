@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.getcwd(), '..'))
 
-from server import process_client_message
+from server import Server
 from common.variables import RESPONSE, TIME, ACTION, PRESENCE, USER, ACCOUNT_NAME, ERROR
 
 class TestServer(unittest.TestCase):
@@ -32,10 +32,10 @@ class TestServer(unittest.TestCase):
     }
 
     def test_correct(self):
-        self.assertEqual(process_client_message(self.correct_dict), self.test_dict_recv_ok)
+        self.assertEqual(Server.process_client_message(self.correct_dict), self.test_dict_recv_ok)
 
     def test_without_action(self):
-        self.assertEqual(process_client_message(self.dict_without_action), self.test_dict_recv_error)
+        self.assertEqual(Server.process_client_message(self.dict_without_action), self.test_dict_recv_error)
 
 
 
