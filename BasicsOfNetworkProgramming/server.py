@@ -6,9 +6,13 @@ from common.variables import USER, ACTION, ACCOUNT_NAME, PRESENCE, TIME, ERROR, 
     SENDER, DESTINATION, RESPONSE_200, RESPONSE_400, EXIT
 from common.utils import get_message, send_message
 import logging
+
+from descriptors import Port
 from log_decorator import log
+from metaclasses import ServerVerifier
 
 SERVER_LOGGER = logging.getLogger('server')
+
 
 
 @log
@@ -23,7 +27,8 @@ def arg_parser():
     return listen_address, listen_port
 
 
-class Server:
+class Server(metaclass=ServerVerifier):
+    port = Port()
     def __init__(self, listen_address, listen_port):
         self.sock = None
         self.addr = listen_address
@@ -66,7 +71,6 @@ class Server:
                 pass
             # принимаем сообщения и если ошибка, исключаем клиента
             if data_to_receive:
-                SERVER_LOGGER.info(f'data_to_receive: {data_to_receive}')
                 for client_with_message in data_to_receive:
                     try:
                         self.process_client_message(get_message(client_with_message), client_with_message)

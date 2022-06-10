@@ -10,6 +10,7 @@ from common.utils import get_message, send_message
 import logging
 from errors import ServerError, ReqFieldMissingError, IncorrectDataReceivedError
 from log_decorator import log
+from metaclasses import ClientVerifier
 
 CLIENT_LOGGER = logging.getLogger('client')
 
@@ -21,7 +22,7 @@ def print_help():
     print('next - выйти')
 
 
-class ClientSender(threading.Thread):
+class ClientSender(threading.Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
@@ -74,7 +75,7 @@ class ClientSender(threading.Thread):
                 print(f'Неизвестная команда. Введите "help" для получения списка команд.')
 
 
-class ClientReader(threading.Thread):
+class ClientReader(threading.Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
