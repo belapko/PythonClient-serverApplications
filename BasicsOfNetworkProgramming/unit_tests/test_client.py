@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.getcwd(), '..'))
 
-from client import create_presence, process_ans
+from client import create_presence, process_response_answer
 from common.variables import RESPONSE, TIME, ACTION, PRESENCE, USER, ACCOUNT_NAME, ERROR
 
 
