@@ -26,3 +26,6 @@ RESPONSE_400 = {
     RESPONSE: 400,
     ERROR: None
 }
+
+SERVER_DATABASE = 'sqlite:///server_db.db3'
+SERVER_TEST_DATABASE = 'sqlite:///server_test_db.db3'
