@@ -1,7 +1,8 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.getcwd(), '..'))
-import logging
+import logging.handlers
 from common.variables import LOGGING_LEVEL
 
 client_formatter = logging.Formatter('%(asctime)s %(levelname)s %(filename)s %(message)s')
@@ -12,7 +13,7 @@ path = os.path.join(path, 'client.log')
 # logstream.setFormatter(client_formatter)
 # logstream.setLevel(logging.DEBUG)
 
-logfile = logging.FileHandler(path, encoding='utf-8')
+logfile = logging.handlers.TimedRotatingFileHandler(path, encoding='utf-8', interval=1, when='D')
 logfile.setFormatter(client_formatter)
 
 logger = logging.getLogger('client')
