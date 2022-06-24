@@ -5,7 +5,8 @@ import socket
 import threading
 
 from common.variables import USER, ACTION, ACCOUNT_NAME, PRESENCE, TIME, ERROR, DEFAULT_PORT, MESSAGE, MESSAGE_TEXT, \
-    SENDER, DESTINATION, RESPONSE_200, RESPONSE_400, EXIT
+    SENDER, DESTINATION, RESPONSE_200, RESPONSE_400, EXIT, GET_CONTACTS, LIST_INFO, RESPONSE_202, ADD_CONTACT, \
+    REMOVE_CONTACT, USERS_REQUEST
 from common.utils import get_message, send_message
 import logging
 from server_db import ServerStorage
@@ -15,6 +16,7 @@ from metaclasses import ServerVerifier
 
 SERVER_LOGGER = logging.getLogger('server')
 
+conflag_lock = threading.Lock()
 
 @log
 def arg_parser():
@@ -103,6 +105,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             SERVER_LOGGER.info(f'Пользователя {message[DESTINATION]} не существует. Отправка невозможна.')
 
     def process_client_message(self, message, client):
+        global new_connection
         SERVER_LOGGER.debug(f'Разбор сообщения: {message} от клиента')
         if ACTION in message and message[ACTION] == PRESENCE and TIME in message and USER in message:
             # Регистрация пользователя, если такого ещё не существует
@@ -111,6 +114,8 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 self.database.user_login(message[USER][ACCOUNT_NAME], client_ip, client_port)
                 self.names[message[USER][ACCOUNT_NAME]] = client
                 send_message(client, RESPONSE_200)
+                with conflag_lock:
+                    new_connection = True
             # Пользователь уже существует - отправляем ответ и завершаем соединение
             else:
                 response = RESPONSE_400
@@ -132,7 +137,27 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             self.names[message[ACCOUNT_NAME]].close()
             SERVER_LOGGER.info(f'Клиент {self.names[message[ACCOUNT_NAME]]} вышел.')
             del self.names[message[ACCOUNT_NAME]]
+            with conflag_lock:
+                new_connection = True
             return
+        #Запрос контактов
+        elif ACTION in message and message[ACTION] == GET_CONTACTS and USER in message and self.names[message[USER]] == client:
+            response = RESPONSE_202
+            response[LIST_INFO] = self.database.get_contacts(message[USER])
+            send_message(client, response)
+        # Если добавление контакта
+        elif ACTION in message and message[ACTION] == ADD_CONTACT and ACCOUNT_NAME in message and USER in message and self.names[message[USER]] == client:
+            self.database.add_contact(message[USER], message[ACCOUNT_NAME])
+            send_message(client, RESPONSE_200)
+        # Если удаление контакта
+        elif ACTION in message and message[ACTION] == REMOVE_CONTACT and ACCOUNT_NAME in message and USER in message and self.names[message[USER]] == client:
+            self.database.remove_contact(message[USER], message[ACCOUNT_NAME])
+            send_message(client, RESPONSE_200)
+        # Запрос известных пользователей
+        elif ACTION in message and message[ACTION] == USERS_REQUEST and ACCOUNT_NAME in message and self.names[message[ACCOUNT_NAME]] == client:
+            response = RESPONSE_202
+            response[LIST_INFO] = [name[0] for name in self.database.users_list()]
+            send_message(client, response)
         # Если всё плохо и непонятно - Bad request
         else:
             response = RESPONSE_400
