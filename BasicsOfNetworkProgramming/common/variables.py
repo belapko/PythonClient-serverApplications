@@ -20,12 +20,24 @@ ERROR = 'error'
 MESSAGE = 'message'
 MESSAGE_TEXT = 'mess_text'
 EXIT = 'exit'
+GET_CONTACTS = 'get_contacts'
+LIST_INFO = 'data_list'
+REMOVE_CONTACT = 'remove'
+ADD_CONTACT = 'add'
+USERS_REQUEST = 'get_users'
 
 RESPONSE_200 = {RESPONSE: 200}
 RESPONSE_400 = {
     RESPONSE: 400,
     ERROR: None
 }
+RESPONSE_202 = {
+    RESPONSE: 202,
+    LIST_INFO: None
+}
 
 SERVER_DATABASE = 'sqlite:///server_db.db3'
 SERVER_TEST_DATABASE = 'sqlite:///server_test_db.db3'
+
+CLIENT_DATABASE = 'sqlite:///client_db.db3'
+CLIENT_TEST_DATABASE = 'sqlite:///client_test_db.db3'
